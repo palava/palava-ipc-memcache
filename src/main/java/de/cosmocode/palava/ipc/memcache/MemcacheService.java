@@ -25,12 +25,12 @@ import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import de.cosmocode.jackson.JacksonRenderer;
 import de.cosmocode.palava.ipc.*;
-import de.cosmocode.palava.ipc.cache.*;
+import de.cosmocode.palava.ipc.cache.CacheKey;
+import de.cosmocode.palava.ipc.cache.CacheKeyFactory;
+import de.cosmocode.palava.ipc.cache.CachePolicy;
+import de.cosmocode.palava.ipc.cache.CommandCacheService;
 import de.cosmocode.rendering.Renderer;
-import net.spy.memcached.AddrUtil;
-import net.spy.memcached.BinaryConnectionFactory;
-import net.spy.memcached.MemcachedClient;
-import net.spy.memcached.MemcachedClientIF;
+import net.spy.memcached.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,13 +82,25 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
     @Override
     public MemcachedClientIF get() {
         try {
+            final ConnectionFactory cf;
+            final MemcachedClientIF client;
             if (binary) {
-                return new DestroyableMemcachedClient(
-                        new MemcachedClient(new BinaryConnectionFactory(), addresses)
+                cf = new BinaryConnectionFactory(
+                        BinaryConnectionFactory.DEFAULT_OP_QUEUE_LEN,
+                        BinaryConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
+                        HashAlgorithm.CRC32_HASH /* nessecary for php */
                 );
             } else {
-                return new MemcachedClient(addresses);
+                cf = new DefaultConnectionFactory(
+                        DefaultConnectionFactory.DEFAULT_OP_QUEUE_LEN,
+                        DefaultConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
+                        HashAlgorithm.CRC32_HASH /* nessecary for php */
+                );
             }
+
+            return new DestroyableMemcachedClient(
+                    new MemcachedClient(cf, addresses)
+            );
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

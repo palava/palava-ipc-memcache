@@ -31,11 +31,15 @@ class IpcMemcache extends AbstractPalavaModule {
         }
 
         $this->connection = new Memcache();
+
         $addrs = explode(' ', $addresses);
         foreach ($addrs as $addr) {
             list($host, $port) = explode(':', $addr);
             $this->connection->addserver($host, $port);
         }
+
+        // same as the java library
+        $this->connection->setCompressThreshold(16384);
     }
 
     private function callKey(&$call) {
