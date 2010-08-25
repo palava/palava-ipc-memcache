@@ -88,13 +88,13 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
                 cf = new BinaryConnectionFactory(
                         BinaryConnectionFactory.DEFAULT_OP_QUEUE_LEN,
                         BinaryConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
-                        HashAlgorithm.CRC32_HASH /* nessecary for php */
+                        HashAlgorithm.FNV1A_32_HASH /* nessecary for php */
                 );
             } else {
                 cf = new DefaultConnectionFactory(
                         DefaultConnectionFactory.DEFAULT_OP_QUEUE_LEN,
                         DefaultConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
-                        HashAlgorithm.CRC32_HASH /* nessecary for php */
+                        HashAlgorithm.FNV1A_32_HASH /* nessecary for php */
                 );
             }
             final MemcachedClient client = new MemcachedClient(cf, addresses);
@@ -144,7 +144,7 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
             while (iterator.hasNext()) {
                 final CacheKey cacheKey = iterator.next();
                 if (predicate.apply(cacheKey)) {
-                    LOG.trace("{} matches {}, invalidating...", cacheKey, predicate);
+                    LOG.debug("{} matches {}, invalidating...", cacheKey, predicate);
                     final Renderer rKey = new JacksonRenderer();
                     final String key = rKey.value(cacheKey).build().toString();
                     memcache.delete(key);
