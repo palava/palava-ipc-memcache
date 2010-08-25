@@ -131,7 +131,7 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
 
         MemcachedClientIF memcache = memcachedClientProvider.get();
 
-        final String indexKey = command.getClass().getName();
+        final String indexKey = command.getName();
         final Set<CacheKey> index = (Set<CacheKey>)memcache.get(indexKey);
 
         if (index == null) {
