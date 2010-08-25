@@ -16,6 +16,11 @@ class IpcMemcache extends AbstractPalavaModule {
      */
     private $connection = null;
 
+    /**
+     * statistics
+     */
+    private $statistics = array();
+
     private function enabled() {
         return $this->get(IpcMemcache::CONFIG_ENABLED, IpcMemcache::DEFAULT_ENABLED);
     }
@@ -61,16 +66,35 @@ class IpcMemcache extends AbstractPalavaModule {
         $key = $this->callKey($call);
 
         // get it
-        $json = $this->connection->get($key);
+        $time_start = microtime(true);
+        $json = @$this->connection->get($key);
         if ($json !== FALSE) {
             // return something which looks like a real response
-            return array(
+            $response = array(
                 Palava::PKEY_PROTOCOL => $call[Palava::PKEY_PROTOCOL],
                 Palava::PKEY_SESSION => $call[Palava::PKEY_SESSION],
                 Palava::PKEY_RESULT => json_decode($json, true)
             );
+            $this->stats($time_start, $call, true);
+            return $response;
         } else {
+            $this->stats($time_start, $call, false);
             return null;
         }
+    }
+
+    private function stats($starttime, &$call, $cached) {
+        $endtime = microtime(true);
+        $duration = $endtime - $starttime;
+
+        $this->statistics[] = array(
+            'call' => $call,
+            'duration' => $duration,
+            'cached' => $cached
+        );
+    }
+
+    public function getStatistics() {
+        return $this->statistics;
     }
 }
