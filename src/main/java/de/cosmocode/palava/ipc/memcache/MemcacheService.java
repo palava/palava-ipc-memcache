@@ -101,9 +101,10 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
 
             if (cf.getDefaultTranscoder() instanceof BaseSerializingTranscoder) {
                 BaseSerializingTranscoder bst = (BaseSerializingTranscoder)cf.getDefaultTranscoder();
-                bst.setCompressionThreshold(10 * 1024 * 1024); // 10mb, memcached should not support this
+                // something we do not reach as PHP cannot uncompress our stuff
+                bst.setCompressionThreshold(Integer.MAX_VALUE);
             } else {
-                LOG.warn("cannot deactivate compression; php will not handle big values");
+                throw new UnsupportedOperationException("cannot deactivate compression; php will not handle big values");
             }
 
             return new DestroyableMemcachedClient(

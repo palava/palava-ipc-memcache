@@ -41,6 +41,10 @@ final class DestroyableMemcachedClient implements MemcachedClientIF, Destroyable
         this.client = client;
     }
 
+    public MemcachedClientIF getDelegate() {
+        return client;
+    }
+
     @Override
     public void destroy() {
         client.shutdown();
