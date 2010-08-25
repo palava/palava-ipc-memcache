@@ -68,14 +68,14 @@ class IpcMemcache extends AbstractPalavaModule {
         // get it
         $time_start = microtime(true);
         $json = @$this->connection->get($key);
-        if ($json !== FALSE) {
+        if (strlen($json) >= 2) {  /* minimum json: {} */
             // return something which looks like a real response
             $response = array(
                 Palava::PKEY_PROTOCOL => $call[Palava::PKEY_PROTOCOL],
                 Palava::PKEY_SESSION => $call[Palava::PKEY_SESSION],
                 Palava::PKEY_RESULT => json_decode($json, true)
             );
-            $this->stats($time_start, $call, true);
+            $this->stats($time_start, $call, true, $key);
             return $response;
         } else {
             $this->stats($time_start, $call, false);
@@ -83,14 +83,15 @@ class IpcMemcache extends AbstractPalavaModule {
         }
     }
 
-    private function stats($starttime, &$call, $cached) {
+    private function stats($starttime, &$call, $cached, $key = null) {
         $endtime = microtime(true);
         $duration = $endtime - $starttime;
 
         $this->statistics[] = array(
             'call' => $call,
             'duration' => $duration,
-            'cached' => $cached
+            'cached' => $cached,
+            'key' => $key
         );
     }
 

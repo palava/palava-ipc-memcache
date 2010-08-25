@@ -31,6 +31,7 @@ import de.cosmocode.palava.ipc.cache.CachePolicy;
 import de.cosmocode.palava.ipc.cache.CommandCacheService;
 import de.cosmocode.rendering.Renderer;
 import net.spy.memcached.*;
+import net.spy.memcached.transcoders.BaseSerializingTranscoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,6 +97,13 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
                         DefaultConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
                         HashAlgorithm.CRC32_HASH /* nessecary for php */
                 );
+            }
+
+            if (cf.getDefaultTranscoder() instanceof BaseSerializingTranscoder) {
+                BaseSerializingTranscoder bst = (BaseSerializingTranscoder)cf.getDefaultTranscoder();
+                bst.setCompressionThreshold(10 * 1024 * 1024); // 10mb, memcached should not support this
+            } else {
+                LOG.warn("cannot deactivate compression; php will not handle big values");
             }
 
             return new DestroyableMemcachedClient(
