@@ -78,20 +78,20 @@ class IpcMemcache extends AbstractPalavaModule {
             $this->stats($time_start, $call, true, $key);
             return $response;
         } else {
-            $this->stats($time_start, $call, false);
+            $this->stats($time_start, $call, false, $key);
             return null;
         }
     }
 
-    private function stats($starttime, &$call, $cached, $key = null) {
+    private function stats($starttime, &$call, $cached, $key) {
         $endtime = microtime(true);
         $duration = $endtime - $starttime;
 
         $this->statistics[] = array(
             'call' => $call,
             'duration' => $duration,
+            'key' => $key,
             'cached' => $cached,
-            'key' => $key
         );
     }
 
