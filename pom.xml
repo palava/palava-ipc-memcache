@@ -7,12 +7,12 @@
     </parent>
 
     <name>Palava IPC memcache</name>
-    <version>1.1.4</version>
+    <version>1.2-SNAPSHOT</version>
     <groupId>de.cosmocode.palava</groupId>
     <artifactId>palava-ipc-memcache</artifactId>
 
     <scm>
-        <developerConnection>scm:svn:https://palava.svn.cosmocode.de/palava-ipc-memcache/tags/1.1.4</developerConnection>
+        <developerConnection>scm:svn:https://palava.svn.cosmocode.de/palava-ipc-memcache/trunk</developerConnection>
     </scm>
 
     <repositories>
