@@ -84,7 +84,6 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
     public MemcachedClientIF get() {
         try {
             final ConnectionFactory cf;
-            final MemcachedClientIF client;
             if (binary) {
                 cf = new BinaryConnectionFactory(
                         BinaryConnectionFactory.DEFAULT_OP_QUEUE_LEN,
@@ -98,18 +97,18 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
                         HashAlgorithm.CRC32_HASH /* nessecary for php */
                 );
             }
+            final MemcachedClient client = new MemcachedClient(cf, addresses);
 
-            if (cf.getDefaultTranscoder() instanceof BaseSerializingTranscoder) {
-                BaseSerializingTranscoder bst = (BaseSerializingTranscoder)cf.getDefaultTranscoder();
+            if (client.getTranscoder() instanceof BaseSerializingTranscoder) {
+                BaseSerializingTranscoder bst = (BaseSerializingTranscoder)client.getTranscoder();
                 // something we do not reach as PHP cannot uncompress our stuff
+                LOG.trace("deactivating compression");
                 bst.setCompressionThreshold(Integer.MAX_VALUE);
             } else {
                 throw new UnsupportedOperationException("cannot deactivate compression; php will not handle big values");
             }
 
-            return new DestroyableMemcachedClient(
-                    new MemcachedClient(cf, addresses)
-            );
+            return new DestroyableMemcachedClient(client);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -199,6 +198,7 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
 
         // store it
         LOG.trace("Storing {} => {}..", key, value);
+
         memcache.set(key, timeout, value);
         updateIndex(command, cacheKey);
 
