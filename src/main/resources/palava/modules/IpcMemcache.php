@@ -64,7 +64,7 @@ class IpcMemcache extends AbstractPalavaModule {
 
         // get it
         $time_start = microtime(true);
-        $json = @$this->connection->get($key);
+        $json = $this->connection->get($key);
         if (strlen($json) >= 2) {  /* minimum json: {} */
             // return something which looks like a real response
             $response = array(
