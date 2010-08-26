@@ -31,6 +31,7 @@ import de.cosmocode.palava.ipc.cache.CachePolicy;
 import de.cosmocode.palava.ipc.cache.CommandCacheService;
 import de.cosmocode.rendering.Renderer;
 import net.spy.memcached.*;
+import net.spy.memcached.transcoders.BaseSerializingTranscoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,8 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
     private boolean binary = false;
     private int defaultTimeout = 0;
     private TimeUnit defaultTimeoutUnit = TimeUnit.SECONDS;
+    private int compressionThreshold = -1;
+    private HashAlgorithm hashAlgorithm = HashAlgorithm.NATIVE_HASH;
 
     private final Provider<MemcachedClientIF> memcachedClientProvider;
 
@@ -79,47 +82,45 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
         this.defaultTimeoutUnit = defaultTimeoutUnit;
     }
 
+    @Inject(optional = true)
+    public void setCompressionThreshold(@Named(MemcacheConfig.COMPRESSION_THRESHOLD) int compressionThreshold) {
+        this.compressionThreshold = compressionThreshold;
+    }
+
+    @Inject(optional = true)
+    public void setHashAlgorithm(@Named(MemcacheConfig.HASH_ALGORITHM) HashAlgorithm hashAlgorithm) {
+        this.hashAlgorithm = hashAlgorithm;
+    }
+
     @Override
     public MemcachedClientIF get() {
         try {
-		/*
             final ConnectionFactory cf;
             if (binary) {
                 cf = new BinaryConnectionFactory(
                         BinaryConnectionFactory.DEFAULT_OP_QUEUE_LEN,
                         BinaryConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
-                        HashAlgorithm.FNV1A_32_HASH / * nessecary for php * /
+                        hashAlgorithm
                 );
             } else {
                 cf = new DefaultConnectionFactory(
                         DefaultConnectionFactory.DEFAULT_OP_QUEUE_LEN,
                         DefaultConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
-                        HashAlgorithm.FNV1A_32_HASH / * nessecary for php * /
+                        hashAlgorithm
                 );
             }
             final MemcachedClient client = new MemcachedClient(cf, addresses);
 
-            if (client.getTranscoder() instanceof BaseSerializingTranscoder) {
-                BaseSerializingTranscoder bst = (BaseSerializingTranscoder)client.getTranscoder();
-                // something we do not reach as PHP cannot uncompress our stuff
-                LOG.trace("deactivating compression");
-                bst.setCompressionThreshold(Integer.MAX_VALUE);
-            } else {
-                throw new UnsupportedOperationException("cannot deactivate compression; php will not handle big values");
+            if (compressionThreshold >= 0) {
+                if (client.getTranscoder() instanceof BaseSerializingTranscoder) {
+                    BaseSerializingTranscoder bst = (BaseSerializingTranscoder)client.getTranscoder();
+                    bst.setCompressionThreshold(compressionThreshold);
+                } else {
+                    throw new UnsupportedOperationException("cannot set compression threshold; transcoder does not extend BaseSeralizingTranscode");
+                }
             }
 
             return new DestroyableMemcachedClient(client);
-	    */
-            final ConnectionFactory cf;
-            if (binary) {
-                cf = new BinaryConnectionFactory();
-            } else {
-                cf = new DefaultConnectionFactory();
-            }
-            return new DestroyableMemcachedClient(
-                    new MemcachedClient(cf, addresses)
-            );
-
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

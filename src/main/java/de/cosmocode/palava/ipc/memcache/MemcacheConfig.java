@@ -33,4 +33,7 @@ public final class MemcacheConfig {
     public static final String DEFAULT_TIMEOUT = PREFIX + "defaultTimeout";
     public static final String DEFAULT_TIMEOUT_UNIT = PREFIX + "defaultTimeoutUnit";
 
+    public static final String COMPRESSION_THRESHOLD = PREFIX + "compressionThreshold";
+
+    public static final String HASH_ALGORITHM = PREFIX + "hashAlgorithm";
 }
