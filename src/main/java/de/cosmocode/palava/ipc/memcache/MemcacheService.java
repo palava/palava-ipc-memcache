@@ -29,6 +29,7 @@ import de.cosmocode.palava.ipc.cache.CacheKey;
 import de.cosmocode.palava.ipc.cache.CacheKeyFactory;
 import de.cosmocode.palava.ipc.cache.CachePolicy;
 import de.cosmocode.palava.ipc.cache.CommandCacheService;
+import de.cosmocode.palava.scope.UnitOfWork;
 import de.cosmocode.rendering.Renderer;
 import net.spy.memcached.*;
 import org.slf4j.Logger;
@@ -50,8 +51,8 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
 
     private final List<InetSocketAddress> addresses;
     private boolean binary = false;
-    private int defaultTimeout = 1;
-    private TimeUnit defaultTimeoutUnit = TimeUnit.HOURS;
+    private int defaultTimeout = 0;
+    private TimeUnit defaultTimeoutUnit = TimeUnit.SECONDS;
 
     private final Provider<MemcachedClientIF> memcachedClientProvider;
 
@@ -136,6 +137,7 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
     }
 
     @Override
+    @UnitOfWork
     public void invalidate(Class<? extends IpcCommand> command, Predicate<? super CacheKey> predicate) {
         Preconditions.checkNotNull(command, "Command");
         Preconditions.checkNotNull(predicate, "Predicate");
@@ -181,6 +183,7 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
     }
 
     @Override
+    @UnitOfWork
     public Map<String, Object> cache(IpcCall call, IpcCommand command, IpcCallFilterChain chain, CachePolicy policy, long maxAge, TimeUnit maxAgeUnit) throws IpcCommandExecutionException {
         if (policy != CachePolicy.SMART) {
             throw new UnsupportedOperationException("Memcache does only support SMART policy [cachePolicy= " + policy.name() + " @ " + command.getClass().getName() + "]");
