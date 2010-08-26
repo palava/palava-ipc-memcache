@@ -35,7 +35,7 @@ class IpcMemcache extends AbstractPalavaModule {
             throw new Exception("memcached addresses not configured [".IpcMemcache::CONFIG_ADDRESSES."]");
         }
 
-        $this->connection = new Memcache();
+        $this->connection = new Memcached();
 
         $addrs = explode(' ', $addresses);
         foreach ($addrs as $addr) {
@@ -65,7 +65,7 @@ class IpcMemcache extends AbstractPalavaModule {
         // get it
         $time_start = microtime(true);
         $json = $this->connection->get($key);
-        if (strlen($json) >= 2) {  /* minimum json: {} */
+        if ($this->connection->getResultCode() == Memcached::RES_SUCCESS && strlen($json) >= 2) {  /* minimum json: {} */
             // return something which looks like a real response
             $response = array(
                 Palava::PKEY_PROTOCOL => $call[Palava::PKEY_PROTOCOL],
