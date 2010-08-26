@@ -22,7 +22,6 @@ import com.google.inject.Singleton;
 import de.cosmocode.palava.ipc.Current;
 import de.cosmocode.palava.ipc.cache.CacheFilterOnlyModule;
 import de.cosmocode.palava.ipc.cache.CommandCacheService;
-import de.cosmocode.palava.scope.UnitOfWork;
 import net.spy.memcached.MemcachedClientIF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +39,6 @@ public final class MemcacheFilterModule implements Module {
         binder.bind(MemcachedClientIF.class)
                 .annotatedWith(Current.class)
                 .toProvider(MemcacheService.class)
-                .in(UnitOfWork.class);
+                .in(Singleton.class);
     }
 }
