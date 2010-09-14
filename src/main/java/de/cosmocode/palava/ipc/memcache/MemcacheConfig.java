@@ -28,6 +28,11 @@ public final class MemcacheConfig {
      */
     public static final String ADRESSES = PREFIX + "addresses";
 
+    /**
+     * Format:  "de.cosmocode,my.app"
+     */
+    public static final String PACKAGES = PREFIX + "packages";
+
     public static final String BINARY = PREFIX + "binary";
 
     public static final String DEFAULT_TIMEOUT = PREFIX + "defaultTimeout";

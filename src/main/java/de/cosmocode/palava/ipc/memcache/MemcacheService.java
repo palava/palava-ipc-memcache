@@ -23,7 +23,12 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+import de.cosmocode.commons.reflect.Classpath;
+import de.cosmocode.commons.reflect.Packages;
+import de.cosmocode.commons.reflect.Reflection;
 import de.cosmocode.jackson.JacksonRenderer;
+import de.cosmocode.palava.core.lifecycle.Initializable;
+import de.cosmocode.palava.core.lifecycle.LifecycleException;
 import de.cosmocode.palava.ipc.*;
 import de.cosmocode.palava.ipc.cache.CacheKey;
 import de.cosmocode.palava.ipc.cache.CacheKeyFactory;
@@ -32,12 +37,13 @@ import de.cosmocode.palava.ipc.cache.CommandCacheService;
 import de.cosmocode.rendering.Renderer;
 import net.spy.memcached.*;
 import net.spy.memcached.transcoders.BaseSerializingTranscoder;
+import org.infinispan.Cache;
+import org.infinispan.manager.CacheContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Tobias Sarnowski
  */
-final class MemcacheService implements CommandCacheService, Provider<MemcachedClientIF> {
+final class MemcacheService implements CommandCacheService, Provider<MemcachedClientIF>, Initializable {
     private static final Logger LOG = LoggerFactory.getLogger(MemcacheService.class);
 
     private final List<InetSocketAddress> addresses;
@@ -56,15 +62,33 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
     private int compressionThreshold = -1;
     private HashAlgorithm hashAlgorithm = HashAlgorithm.NATIVE_HASH;
 
+    private final CacheContainer cacheContainer;
     private final Provider<MemcachedClientIF> memcachedClientProvider;
+    private final String packages;
 
     @Inject
     public MemcacheService(
             @Named(MemcacheConfig.ADRESSES) String addresses,
-            @Current Provider<MemcachedClientIF> memcachedClientProvider) {
+            @IpcMemcache CacheContainer cacheContainer,
+            @Current Provider<MemcachedClientIF> memcachedClientProvider,
+            @Named(MemcacheConfig.PACKAGES) String packages) {
+        this.cacheContainer = cacheContainer;
         this.memcachedClientProvider = memcachedClientProvider;
+        this.packages = packages;
         Preconditions.checkNotNull(addresses, "Addresses");
         this.addresses = AddrUtil.getAddresses(addresses);
+    }
+
+    @Override
+    public void initialize() throws LifecycleException {
+        final Classpath classpath = Reflection.defaultClasspath();
+        final Packages packages = classpath.restrictTo(this.packages.split(","));
+
+        LOG.info("Preloading command caches in {}", this.packages);
+        for (Class<? extends IpcCommand> type : packages.subclassesOf(IpcCommand.class)) {
+            // preload caches
+            cacheContainer.getCache(type.getName());
+        }
     }
 
     @Inject(optional = true)
@@ -143,35 +167,31 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
 
         MemcachedClientIF memcache = memcachedClientProvider.get();
 
-        final String indexKey = command.getName();
-        final Set<CacheKey> index = (Set<CacheKey>)memcache.get(indexKey);
+        final Cache<CacheKey,Boolean> cache = cacheContainer.getCache(command.getName());
 
-        if (index == null) {
+        if (cache.isEmpty()) {
             LOG.trace("No cached versions of {} found.", command);
         } else {
-            LOG.trace("Trying to invalidate {} cached versions of {}...", index.size(), command);
+            LOG.trace("Trying to invalidate {} cached versions of {}...", cache.size(), command);
 
-            final Iterator<CacheKey> iterator = index.iterator();
+            // infinispan uses immutable iterators, so no: iterator.remove();
 
-            while (iterator.hasNext()) {
-                final CacheKey cacheKey = iterator.next();
+            Set<CacheKey> keys = Sets.newHashSet();
+            for (CacheKey cacheKey: cache.keySet()) {
                 if (predicate.apply(cacheKey)) {
                     LOG.debug("{} matches {}, invalidating...", cacheKey, predicate);
-                    final Renderer rKey = new JacksonRenderer();
-                    final String key = rKey.value(cacheKey).build().toString();
-                    memcache.delete(key);
-                    iterator.remove();
+                    keys.add(cacheKey);
                 } else {
                     LOG.trace("{} does not match {}", cacheKey, predicate);
                 }
             }
 
-            if (index.isEmpty()) {
-                LOG.trace("Removing empty index for {}", command);
-                memcache.delete(indexKey);
-            } else {
-                LOG.trace("Updating index for {}", command);
-                memcache.set(indexKey, 0, index);
+            LOG.debug("invalidating found keys...");
+            for (CacheKey cacheKey: keys) {
+                final Renderer rKey = new JacksonRenderer();
+                final String key = rKey.value(cacheKey).build().toString();
+                memcache.delete(key);
+                cache.removeAsync(cacheKey);
             }
         }
     }
@@ -219,17 +239,12 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
     }
 
     private void updateIndex(IpcCommand command, CacheKey cacheKey) {
-        MemcachedClientIF memcache = memcachedClientProvider.get();
-        final String indexKey = command.getClass().getName();
+        // the key set of this command
+        final Cache<CacheKey,Boolean> cache = cacheContainer.getCache(command.getClass().getName());
 
-        Set<CacheKey> index = (Set<CacheKey>)memcache.get(indexKey);
-        if (index == null) {
-            index = Sets.newHashSet();
-        }
+        // add the cache key
+        cache.putIfAbsentAsync(cacheKey, true);
 
-        index.add(cacheKey);
-        memcache.set(indexKey, 0, index);
-
-        LOG.trace("Cached {} in memcache", cacheKey);
+        LOG.debug("Added {} to index {}", cacheKey, cache);
     }
 }

@@ -17,12 +17,15 @@
 package de.cosmocode.palava.ipc.memcache;
 
 import com.google.inject.Binder;
+import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.google.inject.name.Names;
 import de.cosmocode.palava.ipc.Current;
 import de.cosmocode.palava.ipc.cache.CacheFilterOnlyModule;
 import de.cosmocode.palava.ipc.cache.CommandCacheService;
 import net.spy.memcached.MemcachedClientIF;
+import org.infinispan.manager.CacheContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +35,12 @@ import org.slf4j.LoggerFactory;
 public final class MemcacheFilterModule implements Module {
     private static final Logger LOG = LoggerFactory.getLogger(MemcacheFilterModule.class);
 
+    private final String configFile;
+
+    public MemcacheFilterModule(String configFile) {
+        this.configFile = configFile;
+    }
+
     @Override
     public void configure(Binder binder) {
         binder.install(new CacheFilterOnlyModule());
@@ -40,5 +49,10 @@ public final class MemcacheFilterModule implements Module {
                 .annotatedWith(Current.class)
                 .toProvider(MemcacheService.class)
                 .in(Singleton.class);
+
+        // rebind cachecontainer to our annotation
+        binder.bind(CacheContainer.class).annotatedWith(IpcMemcache.class)
+            .to(Key.get(CacheContainer.class, Names.named(configFile)))
+            .asEagerSingleton();
     }
 }
