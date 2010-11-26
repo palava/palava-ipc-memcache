@@ -12,7 +12,7 @@
     <artifactId>palava-ipc-memcache</artifactId>
 
     <scm>
-        <developerConnection>scm:svn:https://palava.svn.cosmocode.de/palava-ipc-memcache/trunk</developerConnection>
+        <developerConnection>scm:git:git@github.com:palava/${project.artifactId}.git</developerConnection>
     </scm>
 
     <repositories>
