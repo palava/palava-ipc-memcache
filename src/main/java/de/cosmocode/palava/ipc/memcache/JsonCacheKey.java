@@ -16,7 +16,13 @@
 
 package de.cosmocode.palava.ipc.memcache;
 
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Maps;
+
 import de.cosmocode.palava.ipc.IpcArguments;
 import de.cosmocode.palava.ipc.IpcCommand;
 import de.cosmocode.palava.ipc.MapIpcArguments;
@@ -25,10 +31,6 @@ import de.cosmocode.rendering.Renderable;
 import de.cosmocode.rendering.Renderer;
 import de.cosmocode.rendering.RenderingException;
 import de.cosmocode.rendering.RenderingLevel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * @author Tobias Sarnowski

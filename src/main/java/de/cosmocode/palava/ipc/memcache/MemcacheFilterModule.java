@@ -16,18 +16,21 @@
 
 package de.cosmocode.palava.ipc.memcache;
 
+import net.spy.memcached.MemcachedClientIF;
+
+import org.infinispan.manager.CacheContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
+
 import de.cosmocode.palava.ipc.Current;
 import de.cosmocode.palava.ipc.cache.CacheFilterOnlyModule;
 import de.cosmocode.palava.ipc.cache.CommandCacheService;
-import net.spy.memcached.MemcachedClientIF;
-import org.infinispan.manager.CacheContainer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Tobias Sarnowski

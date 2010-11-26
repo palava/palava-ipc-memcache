@@ -16,10 +16,10 @@
 
 package de.cosmocode.palava.ipc.memcache;
 
-import com.google.inject.BindingAnnotation;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+
+import com.google.inject.BindingAnnotation;
 
 /**
  * @author Tobias Sarnowski

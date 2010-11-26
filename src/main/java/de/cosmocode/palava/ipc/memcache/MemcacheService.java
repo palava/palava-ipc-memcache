@@ -16,6 +16,27 @@
 
 package de.cosmocode.palava.ipc.memcache;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import net.spy.memcached.AddrUtil;
+import net.spy.memcached.BinaryConnectionFactory;
+import net.spy.memcached.ConnectionFactory;
+import net.spy.memcached.DefaultConnectionFactory;
+import net.spy.memcached.HashAlgorithm;
+import net.spy.memcached.MemcachedClient;
+import net.spy.memcached.MemcachedClientIF;
+import net.spy.memcached.transcoders.BaseSerializingTranscoder;
+
+import org.infinispan.Cache;
+import org.infinispan.manager.CacheContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
@@ -23,31 +44,23 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+
 import de.cosmocode.commons.reflect.Classpath;
 import de.cosmocode.commons.reflect.Packages;
 import de.cosmocode.commons.reflect.Reflection;
 import de.cosmocode.jackson.JacksonRenderer;
 import de.cosmocode.palava.core.lifecycle.Initializable;
 import de.cosmocode.palava.core.lifecycle.LifecycleException;
-import de.cosmocode.palava.ipc.*;
+import de.cosmocode.palava.ipc.Current;
+import de.cosmocode.palava.ipc.IpcCall;
+import de.cosmocode.palava.ipc.IpcCallFilterChain;
+import de.cosmocode.palava.ipc.IpcCommand;
+import de.cosmocode.palava.ipc.IpcCommandExecutionException;
 import de.cosmocode.palava.ipc.cache.CacheKey;
 import de.cosmocode.palava.ipc.cache.CacheKeyFactory;
 import de.cosmocode.palava.ipc.cache.CachePolicy;
 import de.cosmocode.palava.ipc.cache.CommandCacheService;
 import de.cosmocode.rendering.Renderer;
-import net.spy.memcached.*;
-import net.spy.memcached.transcoders.BaseSerializingTranscoder;
-import org.infinispan.Cache;
-import org.infinispan.manager.CacheContainer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Tobias Sarnowski

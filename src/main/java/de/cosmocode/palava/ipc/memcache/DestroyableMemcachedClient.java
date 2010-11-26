@@ -16,18 +16,25 @@
 
 package de.cosmocode.palava.ipc.memcache;
 
-import de.cosmocode.palava.scope.Destroyable;
-import net.spy.memcached.*;
-import net.spy.memcached.transcoders.Transcoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import net.spy.memcached.CASResponse;
+import net.spy.memcached.CASValue;
+import net.spy.memcached.ConnectionObserver;
+import net.spy.memcached.MemcachedClientIF;
+import net.spy.memcached.NodeLocator;
+import net.spy.memcached.OperationTimeoutException;
+import net.spy.memcached.transcoders.Transcoder;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import de.cosmocode.palava.scope.Destroyable;
 
 /**
  * @author Tobias Sarnowski
