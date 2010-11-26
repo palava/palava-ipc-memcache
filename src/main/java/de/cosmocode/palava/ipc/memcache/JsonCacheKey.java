@@ -33,13 +33,16 @@ import de.cosmocode.rendering.RenderingException;
 import de.cosmocode.rendering.RenderingLevel;
 
 /**
+ * A json based {@link CacheKey}.
+ * 
  * @author Tobias Sarnowski
  */
 public class JsonCacheKey implements CacheKey, Renderable {
-    private static final Logger LOG = LoggerFactory.getLogger(JsonCacheKey.class);
 
+    private static final long serialVersionUID = 701148429090791480L;
+    
     private Class<? extends IpcCommand> command;
-    private Map<String,Object> arguments;
+    private Map<String, Object> arguments;
 
     public JsonCacheKey(Class<? extends IpcCommand> command, IpcArguments arguments) {
         this.command = command;
@@ -64,9 +67,7 @@ public class JsonCacheKey implements CacheKey, Renderable {
 
     @Override
     public String toString() {
-        return "JsonCacheKey{" +
-                "command=" + command +
-                ", arguments=" + arguments +
-                '}';
+        return "JsonCacheKey [command=" + command + ", arguments=" + arguments + "]";
     }
+
 }

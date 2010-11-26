@@ -63,31 +63,34 @@ import de.cosmocode.palava.ipc.cache.CommandCacheService;
 import de.cosmocode.rendering.Renderer;
 
 /**
+ * A Memcache based {@link CommandCacheService} implementation.
+ * 
  * @author Tobias Sarnowski
  */
 final class MemcacheService implements CommandCacheService, Provider<MemcachedClientIF>, Initializable {
+    
     private static final Logger LOG = LoggerFactory.getLogger(MemcacheService.class);
 
     private final List<InetSocketAddress> addresses;
-    private boolean binary = false;
-    private int defaultTimeout = 0;
+    private boolean binary;
+    private int defaultTimeout;
     private TimeUnit defaultTimeoutUnit = TimeUnit.SECONDS;
     private int compressionThreshold = -1;
     private HashAlgorithm hashAlgorithm = HashAlgorithm.NATIVE_HASH;
 
     private final CacheContainer cacheContainer;
     private final Provider<MemcachedClientIF> memcachedClientProvider;
-    private final String packages;
+    private final String packageNames;
 
     @Inject
     public MemcacheService(
             @Named(MemcacheConfig.ADRESSES) String addresses,
             @IpcMemcache CacheContainer cacheContainer,
             @Current Provider<MemcachedClientIF> memcachedClientProvider,
-            @Named(MemcacheConfig.PACKAGES) String packages) {
+            @Named(MemcacheConfig.PACKAGES) String packageNames) {
         this.cacheContainer = cacheContainer;
         this.memcachedClientProvider = memcachedClientProvider;
-        this.packages = packages;
+        this.packageNames = packageNames;
         Preconditions.checkNotNull(addresses, "Addresses");
         this.addresses = AddrUtil.getAddresses(addresses);
     }
@@ -95,9 +98,9 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
     @Override
     public void initialize() throws LifecycleException {
         final Classpath classpath = Reflection.defaultClasspath();
-        final Packages packages = classpath.restrictTo(this.packages.split(","));
+        final Packages packages = classpath.restrictTo(packageNames.split(","));
 
-        LOG.info("Preloading command caches in {}", this.packages);
+        LOG.info("Preloading command caches in {}", packageNames);
         for (Class<? extends IpcCommand> type : packages.subclassesOf(IpcCommand.class)) {
             // preload caches
             cacheContainer.getCache(type.getName());
@@ -135,25 +138,26 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
             final ConnectionFactory cf;
             if (binary) {
                 cf = new BinaryConnectionFactory(
-                        BinaryConnectionFactory.DEFAULT_OP_QUEUE_LEN,
-                        BinaryConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
-                        hashAlgorithm
+                    BinaryConnectionFactory.DEFAULT_OP_QUEUE_LEN,
+                    BinaryConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
+                    hashAlgorithm
                 );
             } else {
                 cf = new DefaultConnectionFactory(
-                        DefaultConnectionFactory.DEFAULT_OP_QUEUE_LEN,
-                        DefaultConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
-                        hashAlgorithm
+                    DefaultConnectionFactory.DEFAULT_OP_QUEUE_LEN,
+                    DefaultConnectionFactory.DEFAULT_READ_BUFFER_SIZE,
+                    hashAlgorithm
                 );
             }
             final MemcachedClient client = new MemcachedClient(cf, addresses);
 
             if (compressionThreshold >= 0) {
                 if (client.getTranscoder() instanceof BaseSerializingTranscoder) {
-                    BaseSerializingTranscoder bst = (BaseSerializingTranscoder)client.getTranscoder();
+                    final BaseSerializingTranscoder bst = (BaseSerializingTranscoder) client.getTranscoder();
                     bst.setCompressionThreshold(compressionThreshold);
                 } else {
-                    throw new UnsupportedOperationException("cannot set compression threshold; transcoder does not extend BaseSeralizingTranscode");
+                    throw new UnsupportedOperationException(
+                        "cannot set compression threshold; transcoder does not extend BaseSeralizingTranscode");
                 }
             }
 
@@ -178,9 +182,9 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
         Preconditions.checkNotNull(command, "Command");
         Preconditions.checkNotNull(predicate, "Predicate");
 
-        MemcachedClientIF memcache = memcachedClientProvider.get();
+        final MemcachedClientIF memcache = memcachedClientProvider.get();
 
-        final Cache<CacheKey,Boolean> cache = cacheContainer.getCache(command.getName());
+        final Cache<CacheKey, Boolean> cache = cacheContainer.getCache(command.getName());
 
         if (cache.isEmpty()) {
             LOG.trace("No cached versions of {} found.", command);
@@ -189,8 +193,8 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
 
             // infinispan uses immutable iterators, so no: iterator.remove();
 
-            Set<CacheKey> keys = Sets.newHashSet();
-            for (CacheKey cacheKey: cache.keySet()) {
+            final Set<CacheKey> keys = Sets.newHashSet();
+            for (CacheKey cacheKey : cache.keySet()) {
                 if (predicate.apply(cacheKey)) {
                     LOG.debug("{} matches {}, invalidating...", cacheKey, predicate);
                     keys.add(cacheKey);
@@ -200,7 +204,7 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
             }
 
             LOG.debug("invalidating found keys...");
-            for (CacheKey cacheKey: keys) {
+            for (CacheKey cacheKey : keys) {
                 final Renderer rKey = new JacksonRenderer();
                 final String key = rKey.value(cacheKey).build().toString();
                 memcache.delete(key);
@@ -210,28 +214,36 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
     }
 
     @Override
-    public Map<String, Object> cache(IpcCall call, IpcCommand command, IpcCallFilterChain chain, CachePolicy policy) throws IpcCommandExecutionException {
+    public Map<String, Object> cache(IpcCall call, IpcCommand command, IpcCallFilterChain chain, CachePolicy policy) 
+        throws IpcCommandExecutionException {
         return cache(call, command, chain, policy, 0, TimeUnit.SECONDS);
     }
 
     @Override
-    public Map<String, Object> cache(IpcCall call, IpcCommand command, IpcCallFilterChain chain, CachePolicy policy, long maxAge, TimeUnit maxAgeUnit) throws IpcCommandExecutionException {
+    public Map<String, Object> cache(IpcCall call, IpcCommand command, IpcCallFilterChain chain, 
+        CachePolicy policy, long maxAge, TimeUnit maxAgeUnit) throws IpcCommandExecutionException {
+        
         if (policy != CachePolicy.SMART) {
-            throw new UnsupportedOperationException("Memcache does only support SMART policy [cachePolicy= " + policy.name() + " @ " + command.getClass().getName() + "]");
+            throw new UnsupportedOperationException(
+                "Memcache does only support SMART policy [cachePolicy= " + 
+                policy.name() + " @ " + command.getClass().getName() + "]"
+            );
         }
 
         // execute the command
         final Map<String, Object> result = chain.filter(call, command);
 
+        final int timeout;
+        
         // calculate timeout
         if (maxAge == 0) {
-            maxAge = defaultTimeout;
-            maxAgeUnit = defaultTimeoutUnit;
+            timeout = (int) defaultTimeoutUnit.toSeconds(defaultTimeout);
+        } else {
+            timeout = (int) maxAgeUnit.toSeconds(maxAge);
         }
-        final int timeout = (int)maxAgeUnit.toSeconds(maxAge);
 
         // get the memcache connection
-        MemcachedClientIF memcache = memcachedClientProvider.get();
+        final MemcachedClientIF memcache = memcachedClientProvider.get();
 
         // generate the json
         final Renderer rKey = new JacksonRenderer();
@@ -253,11 +265,12 @@ final class MemcacheService implements CommandCacheService, Provider<MemcachedCl
 
     private void updateIndex(IpcCommand command, CacheKey cacheKey) {
         // the key set of this command
-        final Cache<CacheKey,Boolean> cache = cacheContainer.getCache(command.getClass().getName());
+        final Cache<CacheKey, Boolean> cache = cacheContainer.getCache(command.getClass().getName());
 
         // add the cache key
         cache.putIfAbsentAsync(cacheKey, true);
 
         LOG.debug("Added {} to index {}", cacheKey, cache);
     }
+    
 }

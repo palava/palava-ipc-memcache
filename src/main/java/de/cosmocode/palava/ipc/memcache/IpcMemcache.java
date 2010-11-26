@@ -19,12 +19,18 @@ package de.cosmocode.palava.ipc.memcache;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import org.infinispan.manager.CacheContainer;
+
 import com.google.inject.BindingAnnotation;
 
 /**
+ * A {@link BindingAnnotation} for a {@link CacheContainer}.
+ * 
  * @author Tobias Sarnowski
  */
 @Retention(RetentionPolicy.RUNTIME)
 @BindingAnnotation
 public @interface IpcMemcache {
+    
 }
+

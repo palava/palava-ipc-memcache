@@ -33,10 +33,11 @@ import de.cosmocode.palava.ipc.cache.CacheFilterOnlyModule;
 import de.cosmocode.palava.ipc.cache.CommandCacheService;
 
 /**
+ * Binds Memcache related implementations. 
+ * 
  * @author Tobias Sarnowski
  */
 public final class MemcacheFilterModule implements Module {
-    private static final Logger LOG = LoggerFactory.getLogger(MemcacheFilterModule.class);
 
     private final String configFile;
 
@@ -47,15 +48,15 @@ public final class MemcacheFilterModule implements Module {
     @Override
     public void configure(Binder binder) {
         binder.install(new CacheFilterOnlyModule());
+        
         binder.bind(CommandCacheService.class).to(MemcacheService.class).in(Singleton.class);
-        binder.bind(MemcachedClientIF.class)
-                .annotatedWith(Current.class)
-                .toProvider(MemcacheService.class)
-                .in(Singleton.class);
+        
+        binder.bind(MemcachedClientIF.class).annotatedWith(Current.class).
+            toProvider(MemcacheService.class).in(Singleton.class);
 
         // rebind cachecontainer to our annotation
-        binder.bind(CacheContainer.class).annotatedWith(IpcMemcache.class)
-            .to(Key.get(CacheContainer.class, Names.named(configFile)))
-            .asEagerSingleton();
+        binder.bind(CacheContainer.class).annotatedWith(IpcMemcache.class).
+            to(Key.get(CacheContainer.class, Names.named(configFile))).asEagerSingleton();
     }
+    
 }

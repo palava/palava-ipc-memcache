@@ -37,10 +37,11 @@ import org.slf4j.LoggerFactory;
 import de.cosmocode.palava.scope.Destroyable;
 
 /**
+ * {@link Destroyable} {@link MemcachedClientIF}.
+ * 
  * @author Tobias Sarnowski
  */
 final class DestroyableMemcachedClient implements MemcachedClientIF, Destroyable {
-    private static final Logger LOG = LoggerFactory.getLogger(DestroyableMemcachedClient.class);
 
     private MemcachedClientIF client;
 
@@ -50,11 +51,6 @@ final class DestroyableMemcachedClient implements MemcachedClientIF, Destroyable
 
     public MemcachedClientIF getDelegate() {
         return client;
-    }
-
-    @Override
-    public void destroy() {
-        client.shutdown();
     }
 
     @Override
@@ -208,7 +204,8 @@ final class DestroyableMemcachedClient implements MemcachedClientIF, Destroyable
     }
 
     @Override
-    public <T> Map<String, T> getBulk(Collection<String> strings, Transcoder<T> tTranscoder) throws OperationTimeoutException {
+    public <T> Map<String, T> getBulk(Collection<String> strings, Transcoder<T> tTranscoder) 
+        throws OperationTimeoutException {
         return client.getBulk(strings, tTranscoder);
     }
 
@@ -328,9 +325,13 @@ final class DestroyableMemcachedClient implements MemcachedClientIF, Destroyable
     }
 
     @Override
-    public String toString() {
-        return "DestroyableMemcachedClient{" +
-                "client=" + client +
-                '}';
+    public void destroy() {
+        client.shutdown();
     }
+
+    @Override
+    public String toString() {
+        return "MemcachedClient [client=" + client + "]";
+    }
+    
 }

@@ -17,6 +17,8 @@
 package de.cosmocode.palava.ipc.memcache;
 
 /**
+ * Static constant holder class for memcache config key names.
+ * 
  * @author Tobias Sarnowski
  */
 public final class MemcacheConfig {
@@ -24,12 +26,12 @@ public final class MemcacheConfig {
     public static final String PREFIX = "memcache.";
 
     /**
-     * Format:  "host1:port1 host2:port2"
+     * Format:  "host1:port1 host2:port2".
      */
     public static final String ADRESSES = PREFIX + "addresses";
 
     /**
-     * Format:  "de.cosmocode,my.app"
+     * Format:  "de.cosmocode,my.app".
      */
     public static final String PACKAGES = PREFIX + "packages";
 
@@ -41,4 +43,9 @@ public final class MemcacheConfig {
     public static final String COMPRESSION_THRESHOLD = PREFIX + "compressionThreshold";
 
     public static final String HASH_ALGORITHM = PREFIX + "hashAlgorithm";
+    
+    private MemcacheConfig() {
+        
+    }
+    
 }
