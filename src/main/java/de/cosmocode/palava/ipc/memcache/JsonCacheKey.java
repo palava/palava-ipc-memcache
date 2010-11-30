@@ -18,9 +18,6 @@ package de.cosmocode.palava.ipc.memcache;
 
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.Maps;
 
 import de.cosmocode.palava.ipc.IpcArguments;

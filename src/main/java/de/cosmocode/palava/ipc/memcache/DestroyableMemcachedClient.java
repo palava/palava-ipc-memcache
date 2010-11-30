@@ -30,10 +30,6 @@ import net.spy.memcached.MemcachedClientIF;
 import net.spy.memcached.NodeLocator;
 import net.spy.memcached.OperationTimeoutException;
 import net.spy.memcached.transcoders.Transcoder;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import de.cosmocode.palava.scope.Destroyable;
 
 /**

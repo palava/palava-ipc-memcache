@@ -19,8 +19,6 @@ package de.cosmocode.palava.ipc.memcache;
 import net.spy.memcached.MemcachedClientIF;
 
 import org.infinispan.manager.CacheContainer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.inject.Binder;
 import com.google.inject.Key;
