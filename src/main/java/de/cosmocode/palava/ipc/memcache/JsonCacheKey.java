@@ -43,7 +43,7 @@ public class JsonCacheKey implements CacheKey, Renderable {
 
     public JsonCacheKey(Class<? extends IpcCommand> command, IpcArguments arguments) {
         this.command = command;
-        this.arguments = Maps.newHashMap(arguments);
+        this.arguments = Maps.newLinkedHashMap(arguments);
     }
 
     @Override
