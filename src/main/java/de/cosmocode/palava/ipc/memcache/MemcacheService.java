@@ -56,6 +56,7 @@ import de.cosmocode.palava.ipc.IpcCall;
 import de.cosmocode.palava.ipc.IpcCallFilterChain;
 import de.cosmocode.palava.ipc.IpcCommand;
 import de.cosmocode.palava.ipc.IpcCommandExecutionException;
+import de.cosmocode.palava.ipc.cache.AbstractCommandCacheService;
 import de.cosmocode.palava.ipc.cache.CacheKey;
 import de.cosmocode.palava.ipc.cache.CacheKeyFactory;
 import de.cosmocode.palava.ipc.cache.CachePolicy;
@@ -67,7 +68,8 @@ import de.cosmocode.rendering.Renderer;
  * 
  * @author Tobias Sarnowski
  */
-final class MemcacheService implements CommandCacheService, Provider<MemcachedClientIF>, Initializable {
+final class MemcacheService extends AbstractCommandCacheService 
+    implements Provider<MemcachedClientIF>, Initializable {
     
     private static final Logger LOG = LoggerFactory.getLogger(MemcacheService.class);
 
