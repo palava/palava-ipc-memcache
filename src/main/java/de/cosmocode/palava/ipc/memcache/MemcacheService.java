@@ -270,7 +270,7 @@ final class MemcacheService extends AbstractCommandCacheService
         final Cache<CacheKey, Boolean> cache = cacheContainer.getCache(command.getClass().getName());
 
         // add the cache key
-        cache.putIfAbsentAsync(cacheKey, true);
+        cache.putIfAbsentAsync(cacheKey, Boolean.TRUE);
 
         LOG.debug("Added {} to index {}", cacheKey, cache);
     }
