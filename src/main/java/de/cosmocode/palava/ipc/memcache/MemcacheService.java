@@ -35,6 +35,7 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.name.Named;
 
 import de.cosmocode.commons.Strings;
@@ -56,7 +57,7 @@ import de.cosmocode.palava.ipc.cache.IpcCommandExecution;
 import de.cosmocode.rendering.Renderer;
 
 /**
- * A Memcache based {@link CommandCacheService} implementation.
+ * A Memcache based {@link IpcCacheService} implementation.
  * 
  * @author Tobias Sarnowski
  */
@@ -65,18 +66,18 @@ final class MemcacheService extends AbstractComputingCacheService implements Ipc
     private static final Logger LOG = LoggerFactory.getLogger(MemcacheService.class);
 
     private final CacheContainer container;
-    private final MemcachedClientIF client;
+    private final Provider<MemcachedClientIF> currentClient;
     private final String packages;
     private final ObjectMapper mapper;
     
     @Inject
     public MemcacheService(
             @IpcMemcache CacheContainer container,
-            @Current MemcachedClientIF client,
+            @Current Provider<MemcachedClientIF> currentClient,
             @Named(MemcacheConfig.PACKAGES) String packages,
             ObjectMapper mapper) {
         this.container = Preconditions.checkNotNull(container, "Container");
-        this.client = Preconditions.checkNotNull(client, "Client");
+        this.currentClient = Preconditions.checkNotNull(currentClient, "CurrentClient");
         this.packages = Preconditions.checkNotNull(packages, "Packages");
         this.mapper = Preconditions.checkNotNull(mapper, "Mapper");
     }
@@ -116,7 +117,7 @@ final class MemcacheService extends AbstractComputingCacheService implements Ipc
         final int timeout = (int) expiration.getLifeTimeIn(TimeUnit.SECONDS);
         final String value = encode(cacheValue);
         
-        client.set(key, timeout, value);
+        currentClient.get().set(key, timeout, value);
         
         // update index
         final Cache<CacheKey, Boolean> cache = container.getCache(cacheKey.getCommand().getName());
@@ -127,7 +128,7 @@ final class MemcacheService extends AbstractComputingCacheService implements Ipc
     @Override
     protected <V> V doRead(Serializable rawKey) {
         final String key = encode(checkType(rawKey, CacheKey.class));
-        final String value = Strings.toString(client.get(key));
+        final String value = Strings.toString(currentClient.get().get(key));
         try {
             if (value == null) {
                 return null;
@@ -184,6 +185,7 @@ final class MemcacheService extends AbstractComputingCacheService implements Ipc
             LOG.trace("No cached versions of {} found.", command);
         } else {
             LOG.trace("Trying to invalidate {} cached versions of {}...", cache.size(), command);
+            final MemcachedClientIF client = currentClient.get();
             LOG.debug("invalidating found keys...");
             for (CacheKey cacheKey : Iterables.filter(cache.keySet(), predicate)) {
                 final String key = encode(cacheKey);

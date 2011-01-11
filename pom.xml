@@ -44,6 +44,11 @@
             <version>2.5</version>
         </dependency>
         <dependency>
+            <groupId>de.cosmocode.palava</groupId>
+          <artifactId>palava-memcache</artifactId>
+          <version>[1.0-SNAPSHOT,2)</version>
+        </dependency>
+        <dependency>
             <groupId>de.cosmocode</groupId>
             <artifactId>cosmocode-json-jackson</artifactId>
             <version>[1.0,2)</version>
