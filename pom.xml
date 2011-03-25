@@ -7,7 +7,7 @@
     </parent>
 
     <name>Palava IPC memcache</name>
-    <version>2.1.0</version>
+    <version>2.2-SNAPSHOT</version>
     <groupId>de.cosmocode.palava</groupId>
     <artifactId>palava-ipc-memcache</artifactId>
 
