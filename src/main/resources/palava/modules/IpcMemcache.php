@@ -9,7 +9,9 @@ class IpcMemcache extends AbstractPalavaModule {
 
     const CONFIG_ENABLED = "memcache.enabled";
     const CONFIG_ADDRESSES = "memcache.addresses";
+    const CONFIG_SHORT_STAT_THRESHOLD = "memcached.shortStatThreshold";
     const DEFAULT_ENABLED = true;
+    const DEFAULT_SHORT_STAT_THRESHOLD = 500;
 
     /**
      * @var Memcache
@@ -21,8 +23,17 @@ class IpcMemcache extends AbstractPalavaModule {
      */
     private $statistics = array();
 
+    /**
+     * @var int number of made calls, effectively being a shortcut for count($this->statistics)
+     */
+    private $callCount = 0;
+
     private function enabled() {
         return $this->get(IpcMemcache::CONFIG_ENABLED, IpcMemcache::DEFAULT_ENABLED);
+    }
+
+    private function shortStatThreshold() {
+        return $this->get(IpcMemcache::CONFIG_SHORT_STAT_THRESHOLD, IpcMemcache::DEFAULT_SHORT_STAT_THRESHOLD);
     }
 
     private function connect() {
@@ -84,12 +95,21 @@ class IpcMemcache extends AbstractPalavaModule {
         $endtime = microtime(true);
         $duration = $endtime - $starttime;
 
-        $this->statistics[] = array(
-            'call' => $call,
-            'duration' => $duration,
-            'key' => $key,
-            'cached' => $cached,
-        );
+        if ($this->callCount > $this->shortStatThreshold()) {
+            // unusually high count of backend calls: don't cache call and key
+            $this->statistics[] = array(
+                'duration' => $duration,
+                'cached' => $cached
+            );
+        } else {
+            $this->statistics[] = array(
+                'call' => $call,
+                'duration' => $duration,
+                'key' => $key,
+                'cached' => $cached,
+            );
+        }
+        $this->callCount++;
     }
 
     public function getStatistics() {
