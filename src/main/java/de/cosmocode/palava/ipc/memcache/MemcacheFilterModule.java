@@ -16,6 +16,8 @@
 
 package de.cosmocode.palava.ipc.memcache;
 
+import net.spy.memcached.MemcachedClientIF;
+
 import org.infinispan.manager.CacheContainer;
 
 import com.google.inject.Binder;
@@ -24,7 +26,9 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 
-import de.cosmocode.palava.ipc.cache.IpcCacheService;
+import de.cosmocode.palava.ipc.Current;
+import de.cosmocode.palava.ipc.cache.CacheFilterOnlyModule;
+import de.cosmocode.palava.ipc.cache.CommandCacheService;
 
 /**
  * Binds Memcache related implementations. 
@@ -41,8 +45,13 @@ public final class MemcacheFilterModule implements Module {
 
     @Override
     public void configure(Binder binder) {
-        binder.bind(IpcCacheService.class).to(MemcacheService.class).in(Singleton.class);
+        binder.install(new CacheFilterOnlyModule());
         
+        binder.bind(CommandCacheService.class).to(MemcacheService.class).in(Singleton.class);
+        
+        binder.bind(MemcachedClientIF.class).annotatedWith(Current.class).
+            toProvider(MemcacheService.class).in(Singleton.class);
+
         // rebind cachecontainer to our annotation
         binder.bind(CacheContainer.class).annotatedWith(IpcMemcache.class).
             to(Key.get(CacheContainer.class, Names.named(configFile))).asEagerSingleton();
